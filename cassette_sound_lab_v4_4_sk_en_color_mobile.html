@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cassette Sound Lab — mobile</title>
+<style>
+:root{--bg:#0f1013;--panel:#191c22;--panel2:#242a34;--line:#38404c;--text:#f4f4f5;--muted:#acb4c2;--accent:#f1b45f;--blue:#91d7ff;--bad:#ff9999;--ok:#a7e6a7;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#252b35 0,#0f1013 44%);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{width:min(1120px,calc(100vw - 24px));margin:auto;padding:22px 0 48px}h1{font-size:clamp(1.5rem,5vw,2.35rem);margin:0 0 8px}p{color:var(--muted);line-height:1.45}.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018)),var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 14px 44px rgba(0,0,0,.28)}h2{font-size:1.08rem;margin:0 0 12px}.drop{border:2px dashed #606a79;background:rgba(255,255,255,.03);border-radius:16px;padding:20px;min-height:122px;display:grid;place-items:center;text-align:center;cursor:pointer}.drop.drag{border-color:var(--accent);background:rgba(241,180,95,.14)}.drop strong{display:block;margin-bottom:4px}.drop small{color:var(--muted)}input[type=file]{display:none}button,select{border:1px solid #4a5362;background:var(--panel2);color:var(--text);border-radius:12px;padding:10px;font-weight:750}button.primary{background:linear-gradient(180deg,#facb79,#d58d31);color:#171109;border-color:#d58d31}button:disabled{opacity:.45}.transport,.row{display:grid;grid-template-columns:1fr;gap:8px}@media(min-width:760px){.transport{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:1fr 1fr}}.status{border:1px solid #303640;background:rgba(0,0,0,.22);border-radius:12px;color:var(--muted);padding:10px;min-height:42px;margin-top:10px}.status.ok{color:var(--ok)}.status.err{color:var(--bad)}.progress-meta{display:flex;justify-content:space-between;color:var(--muted);font-variant-numeric:tabular-nums;font-size:.9rem;margin-top:10px}input[type=range]{width:100%;accent-color:var(--accent)}.controlgrid{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:760px){.controlgrid{grid-template-columns:repeat(2,1fr)}}@media(min-width:1040px){.controlgrid{grid-template-columns:repeat(3,1fr)}}.control{border:1px solid #303640;background:rgba(0,0,0,.18);border-radius:14px;padding:12px}.control header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.control header label{font-weight:800}.switch{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.92rem}.val{color:var(--blue);font-variant-numeric:tabular-nums;white-space:nowrap}.control small{display:block;color:var(--muted);line-height:1.35;margin-top:6px}.presetgrid{display:grid;grid-template-columns:1fr;gap:8px}@media(min-width:760px){.presetgrid{grid-template-columns:repeat(3,1fr)}}.presetgrid button{text-align:left;line-height:1.25}.presetgrid small{display:block;color:var(--muted);font-weight:500;margin-top:2px}.readout{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}@media(min-width:760px){.readout{grid-template-columns:repeat(5,1fr)}}.meter{border:1px solid #303640;background:rgba(255,255,255,.04);border-radius:12px;padding:10px}.meter span{display:block;color:var(--muted);font-size:.82rem}.meter b{font-variant-numeric:tabular-nums}.note{font-size:.92rem;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:12px}.checks{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);margin-top:8px}.checks label{display:flex;align-items:center;gap:6px}.topbar{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}.topbar label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(0,0,0,.16);border-radius:12px;padding:8px 10px;color:var(--muted);font-weight:650}.topbar select{padding:6px 8px}.topbar input[type=checkbox]{accent-color:var(--accent)}code{color:#ffd38b}</style>
+</head>
+<body>
+<main>
+<h1 id="appTitle">Cassette Sound Lab — mobilný kazetový laborátor</h1>
+<p id="intro">Lokálny simulátor kazetovej reprodukcie. Súbor sa prehráva cez browser audio engine, takže zvláda aj dlhé MP3 bez veľkého dekódovania do RAM. Cez Web Audio pridáva voliteľné kazetové javy: kolísanie transportu, šum pásky, mäkkú saturáciu, obmedzené pásmo, head bump, azimuth, presluch kanálov, dropouts a sieťový brum.</p>
+<div class="topbar">
+  <label><span id="langLabel">Jazyk</span><select id="langSelect"><option value="sk">Slovensky</option><option value="en">English</option></select></label>
+</div>
+
+<section class="card">
+  <h2 id="sectionFile">1. Súbor a transport</h2>
+  <label id="drop" class="drop" for="fileInput"><span><strong id="dropTitle">Klikni alebo pretiahni audio sem</strong><small id="dropSmall">.mp3, .wav, .ogg, .m4a podľa podpory prehliadača. Súbor ostáva lokálne.</small></span></label>
+  <input id="fileInput" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" />
+  <audio id="audio" preload="metadata"></audio>
+  <div class="transport" style="margin-top:12px">
+    <button id="play" class="primary" disabled>▶ Play</button><button id="pause" disabled>⏸ Pauza</button><button id="stop" disabled>■ Stop</button><button id="bypass">Bypass FX</button>
+  </div>
+  <div class="progress-meta"><span id="now">0:00.000</span><span id="end">0:00.000</span></div>
+  <input id="progress" type="range" min="0" max="1000" step="1" value="0" disabled />
+  <div class="checks"><label><input id="loop" type="checkbox"><span id="loopLabel">Loop</span></label><label><input id="pitchOff" type="checkbox" checked><span id="pitchLabel">Pitch sa mení s rýchlosťou</span></label></div>
+  <div id="status" class="status">Čakám na súbor…</div>
+</section>
+
+<section class="card">
+  <h2 id="sectionPresets">2. Celkové presety</h2>
+  <div class="presetgrid">
+    <button data-preset="clean">Čistý hi‑fi deck<small>jemný transport, málo šumu, skoro plné pásmo</small></button>
+    <button data-preset="normalTypeI">Normálka Type I z 90s<small>železitý pás, trochu šumu, mäkšie výšky</small></button>
+    <button data-preset="prerecorded">Prednahratá pop kazeta<small>jasnejšia, dolby nádych, jemný azimut/presluch</small></button>
+    <button data-preset="walkman">Dobrý Walkman<small>počuteľný transport + užšie pásmo</small></button>
+    <button data-preset="boombox">Boombox / lacná veža<small>šum, zúžené pásmo, presluch, dropouty</small></button>
+    <button data-preset="poorPortable">Lacný prenosný shitbox<small>zlá mechanika + lacná zvuková cesta</small></button>
+    <button data-preset="sickTransport">Chorý transport<small>nie špecifikácia, skôr reálne umieranie gumiek</small></button>
+    <button data-preset="dictaphone">Diktafón / rádio nahrávka<small>úzke pásmo, brum, skoro-mono špina</small></button>
+    <button data-preset="reset">Reset / skoro digitál<small>všetko preč okrem prehrávania</small></button>
+  </div>
+</section>
+
+<section class="card">
+  <h2 id="sectionEffects">3. Efekty jednotlivo</h2>
+  <div class="controlgrid">
+    <div class="control"><header><label id="labTransport">Transport: speed/wow/flutter</label><span class="switch"><input id="transportOn" data-toggle type="checkbox" checked> on</span></header><div class="row"><div><span class="val" id="speedPctVal"></span><input id="speedPct" data-param type="range" min="-15" max="15" step="0.01"></div><div><span class="val" id="wowPctVal"></span><input id="wowPct" data-param type="range" min="0" max="8" step="0.001"></div></div><div class="row"><div><span class="val" id="wowHzVal"></span><input id="wowHz" data-param type="range" min="0.05" max="3" step="0.01"></div><div><span class="val" id="flutterPctVal"></span><input id="flutterPct" data-param type="range" min="0" max="8" step="0.001"></div></div><div class="row"><div><span class="val" id="flutterHzVal"></span><input id="flutterHz" data-param type="range" min="3" max="24" step="0.1"></div><div><span class="val" id="driftPctVal"></span><input id="driftPct" data-param type="range" min="0" max="10" step="0.01"></div></div><small id="descTransport">Prvé číslo je stála chyba rýchlosti; ďalšie sú približné WRMS-like percentá. Pri chorom transporte môžeš ísť ďaleko za tabuľkové specs.</small></div>
+
+    <div class="control"><header><label id="labTone">Tone / bandlimit / head bump</label><span class="switch"><input id="toneOn" data-toggle type="checkbox" checked> on</span></header><div><span class="val" id="lowpassVal"></span><input id="lowpass" data-param type="range" min="3500" max="20000" step="100"></div><div><span class="val" id="highpassVal"></span><input id="highpass" data-param type="range" min="15" max="180" step="1"></div><div><span class="val" id="headBumpVal"></span><input id="headBump" data-param type="range" min="0" max="8" step="0.1"></div><small id="descTone">Simuluje limitovaný frekvenčný rozsah, basový “head bump” a lacnejšiu elektroniku.</small></div>
+
+    <div class="control"><header><label id="labHiss">Tape hiss</label><span class="switch"><input id="hissOn" data-toggle type="checkbox" checked> on</span></header><div><span class="val" id="hissVal"></span><input id="hiss" data-param type="range" min="0" max="100" step="1"></div><div><span class="val" id="hissToneVal"></span><input id="hissTone" data-param type="range" min="1000" max="9000" step="100"></div><small id="descHiss">Šum je generovaný v reálnom čase a miešaný za audio cestou. Vyšší tón = ostrejší hiss.</small></div>
+
+    <div class="control"><header><label id="labSat">Tape record level / soft saturation</label><span class="switch"><input id="satOn" data-toggle type="checkbox" checked> on</span></header><div><span class="val" id="driveVal"></span><input id="drive" data-param type="range" min="0" max="100" step="1"></div><div><span class="val" id="outputVal"></span><input id="output" data-param type="range" min="0" max="1.0" step="0.01"></div><small id="descSat">Skôr mäkká kompresia a zjemnenie špičiek než digitálne chrčanie. Normálne kazety bývajú tu len veľmi jemne.</small></div>
+
+    <div class="control"><header><label id="labAzimuth">Azimuth / head alignment</label><span class="switch"><input id="azimuthOn" data-toggle type="checkbox"> on</span></header><div><span class="val" id="azimuthMsVal"></span><input id="azimuthMs" data-param type="range" min="0" max="2.5" step="0.01"></div><div><span class="val" id="azimuthLossVal"></span><input id="azimuthLoss" data-param type="range" min="0" max="18" step="0.1"></div><small id="descAzimuth">Delay jedného kanála + strata výšok. V mono by to znelo ešte horšie; v stereu skôr ako fázový/dull problém.</small></div>
+
+    <div class="control"><header><label id="labCrosstalk">Stereo presluch / užší obraz</label><span class="switch"><input id="crosstalkOn" data-toggle type="checkbox"> on</span></header><div><span class="val" id="crosstalkVal"></span><input id="crosstalk" data-param type="range" min="0" max="45" step="1"></div><small id="descCrosstalk">Mieša ľavý/pravý kanál do seba. Lacné hlavy a elektronika = menej presný stereo obraz.</small></div>
+
+    <div class="control"><header><label id="labDropouts">Dropouty / pokrčenia pásky</label><span class="switch"><input id="dropoutOn" data-toggle type="checkbox"> on</span></header><div><span class="val" id="dropoutDepthVal"></span><input id="dropoutDepth" data-param type="range" min="0" max="95" step="1"></div><div><span class="val" id="dropoutRateVal"></span><input id="dropoutRate" data-param type="range" min="0" max="30" step="0.1"></div><small id="descDropouts">Krátke prepadnutia signálu: špina, poškodený pás, tlaková podložka, pokrčená páska.</small></div>
+
+    <div class="control"><header><label id="labHum">50 Hz brum / motor / zdroj</label><span class="switch"><input id="humOn" data-toggle type="checkbox"> on</span></header><div><span class="val" id="humVal"></span><input id="hum" data-param type="range" min="0" max="100" step="1"></div><small id="descHum">50 Hz + harmonické. Pre lacné napájanie, brum, zle tienený vstup alebo rádio-kazeťák.</small></div>
+
+    <div class="control"><header><label id="labNR">Dolby/NR nesúlad zvuku</label><span class="switch"><input id="nrOn" data-toggle type="checkbox"> on</span></header><select id="nrMode"><option value="none">nič</option><option value="bright">Dolby B tape bez Dolby: jasnejšie/hissy</option><option value="dull">Dolby zapnuté na nedolby: dull/muddy</option><option value="worn">starý zle kalibrovaný deck: výšky preč</option></select><small id="descNR">Zjednodušený tonal model, nie skutočný Dolby compander.</small></div>
+  </div>
+
+  <div class="readout"><div class="meter"><span id="readRate">Prehrávacia rýchlosť</span><b id="rateRead">1.0000×</b></div><div class="meter"><span id="readPitch">Pitch základ</span><b id="centsRead">0 cents</b></div><div class="meter"><span id="readWF">Pribl. W&F spolu</span><b id="wfRead">0.000 %</b></div><div class="meter"><span id="readFX">FX stav</span><b id="fxRead">zapnuté</b></div><div class="meter"><span id="readEngine">Engine</span><b id="engineRead">stream + WebAudio</b></div></div>
+  <div id="note" class="note"><strong>Poznámka:</strong> Na mobile je wow/flutter stále modulácia <code>playbackRate</code> po snímkach, nie sample-accurate DSP. Ostatné efekty sú Web Audio graf nad streamovaným audio elementom, takže sú použiteľné aj na dlhé MP3. Na výstupe je bezpečnostný limiter; ak zámerne chceš rozbitý zvuk, použi Shitbox/Chorý transport alebo výrazne zvýš Record Level.</div>
+</section>
+</main>
+<script>
+(() => {
+const $=id=>document.getElementById(id); const audio=$('audio'); let url=null,ctx=null,source=null,nodes={},graphReady=false,fxBypass=false,dragProgress=false; let t0=performance.now()/1000,drift=0,driftTarget=0,lastDrift=0,smoothNoise=0,dropActive=false,dropStart=0,dropEnd=0,dropDepth=0,nextDrop=0;
+const paramIds=['speedPct','wowPct','wowHz','flutterPct','flutterHz','driftPct','lowpass','highpass','headBump','hiss','hissTone','drive','output','azimuthMs','azimuthLoss','crosstalk','dropoutDepth','dropoutRate','hum'];
+const presets={
+ reset:{tog:{transportOn:false,toneOn:false,hissOn:false,satOn:false,azimuthOn:false,crosstalkOn:false,dropoutOn:false,humOn:false,nrOn:false},p:{speedPct:0,wowPct:0,wowHz:.55,flutterPct:0,flutterHz:9,driftPct:0,lowpass:20000,highpass:15,headBump:0,hiss:0,hissTone:5200,drive:0,output:.82,azimuthMs:0,azimuthLoss:0,crosstalk:0,dropoutDepth:0,dropoutRate:0,hum:0},nr:'none'},
+ clean:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:false,azimuthOn:false,crosstalkOn:false,dropoutOn:false,humOn:false,nrOn:false},p:{speedPct:.15,wowPct:.018,wowHz:.55,flutterPct:.012,flutterHz:9.2,driftPct:.004,lowpass:17500,highpass:22,headBump:.3,hiss:5,hissTone:7200,drive:0,output:.78,azimuthMs:.02,azimuthLoss:.3,crosstalk:1,dropoutDepth:0,dropoutRate:0,hum:0},nr:'none'},
+ normalTypeI:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:false,crosstalkOn:false,dropoutOn:false,humOn:false,nrOn:false},p:{speedPct:.25,wowPct:.045,wowHz:.42,flutterPct:.035,flutterHz:7.8,driftPct:.018,lowpass:13200,highpass:28,headBump:.7,hiss:18,hissTone:5600,drive:4,output:.76,azimuthMs:.05,azimuthLoss:.6,crosstalk:3,dropoutDepth:0,dropoutRate:0,hum:0},nr:'none'},
+ prerecorded:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:false,humOn:false,nrOn:true},p:{speedPct:.30,wowPct:.055,wowHz:.39,flutterPct:.045,flutterHz:8.0,driftPct:.025,lowpass:12000,highpass:32,headBump:.8,hiss:16,hissTone:6500,drive:3,output:.76,azimuthMs:.08,azimuthLoss:1.0,crosstalk:5,dropoutDepth:0,dropoutRate:0,hum:0},nr:'bright'},
+ walkman:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:false,humOn:false,nrOn:false},p:{speedPct:.40,wowPct:.12,wowHz:.36,flutterPct:.09,flutterHz:8.5,driftPct:.06,lowpass:10800,highpass:38,headBump:1.0,hiss:24,hissTone:5200,drive:5,output:.74,azimuthMs:.14,azimuthLoss:1.8,crosstalk:8,dropoutDepth:0,dropoutRate:0,hum:0},nr:'none'},
+ boombox:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:true,humOn:true,nrOn:false},p:{speedPct:-.45,wowPct:.22,wowHz:.31,flutterPct:.16,flutterHz:6.8,driftPct:.16,lowpass:8800,highpass:55,headBump:1.8,hiss:34,hissTone:4200,drive:8,output:.72,azimuthMs:.25,azimuthLoss:3.0,crosstalk:14,dropoutDepth:12,dropoutRate:1.5,hum:7},nr:'none'},
+ poorPortable:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:true,humOn:true,nrOn:true},p:{speedPct:-1.2,wowPct:.55,wowHz:.25,flutterPct:.34,flutterHz:5.9,driftPct:.55,lowpass:6500,highpass:80,headBump:2.4,hiss:48,hissTone:3600,drive:14,output:.68,azimuthMs:.55,azimuthLoss:6.0,crosstalk:22,dropoutDepth:30,dropoutRate:4.5,hum:14},nr:'worn'},
+ sickTransport:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:true,humOn:true,nrOn:true},p:{speedPct:-3.5,wowPct:1.6,wowHz:.18,flutterPct:.90,flutterHz:4.6,driftPct:2.2,lowpass:4700,highpass:115,headBump:3.0,hiss:62,hissTone:3000,drive:18,output:.62,azimuthMs:1.10,azimuthLoss:11,crosstalk:30,dropoutDepth:65,dropoutRate:11,hum:22},nr:'worn'},
+ dictaphone:{tog:{transportOn:true,toneOn:true,hissOn:true,satOn:true,azimuthOn:true,crosstalkOn:true,dropoutOn:true,humOn:true,nrOn:false},p:{speedPct:-1.6,wowPct:.45,wowHz:.26,flutterPct:.28,flutterHz:6.2,driftPct:.45,lowpass:4300,highpass:150,headBump:.6,hiss:55,hissTone:2500,drive:12,output:.66,azimuthMs:.50,azimuthLoss:7,crosstalk:36,dropoutDepth:36,dropoutRate:6,hum:20},nr:'none'}
+};
+
+const copy = {
+ "sk": {
+  "title": "Cassette Sound Lab — mobilný kazetový laborátor",
+  "intro": "Lokálny simulátor kazetovej reprodukcie. Súbor sa streamuje cez browser audio engine, takže zvláda aj dlhé MP3 bez brutálneho dekódovania do RAM. Web Audio potom pridáva voliteľné kazetové javy: kolísanie transportu, šum pásky, mäkkú saturáciu, obmedzené pásmo, head bump, azimut, presluch kanálov, dropouty a 50 Hz brum.",
+  "langLabel": "Jazyk",
+  "file": "1. Súbor a transport",
+  "presetsTitle": "2. Celkové presety",
+  "presetItems": {
+   "clean": [
+    "Čistý hi‑fi deck",
+    "jemný transport, málo šumu, skoro plné pásmo"
+   ],
+   "normalTypeI": [
+    "Normálka Type I z 90s",
+    "železitý pás, trochu šumu, mäkšie výšky"
+   ],
+   "prerecorded": [
+    "Prednahratá pop kazeta",
+    "jasnejšia, dolby nádych, jemný azimut/presluch"
+   ],
+   "walkman": [
+    "Dobrý Walkman",
+    "počuteľný transport + užšie pásmo"
+   ],
+   "boombox": [
+    "Boombox / lacná veža",
+    "šum, zúžené pásmo, presluch, dropouty"
+   ],
+   "poorPortable": [
+    "Lacný prenosný shitbox",
+    "zlá mechanika + lacná zvuková cesta"
+   ],
+   "sickTransport": [
+    "Chorý transport",
+    "nie spec sheet, skôr umieranie gumiek v praxi"
+   ],
+   "dictaphone": [
+    "Diktafón / rádio nahrávka",
+    "úzke pásmo, brum, skoro-mono špina"
+   ],
+   "reset": [
+    "Reset / skoro digitál",
+    "všetko preč okrem prehrávania"
+   ]
+  },
+  "effects": "3. Jednotlivé efekty",
+  "dropTitle": "Klikni alebo pretiahni audio sem",
+  "dropSmall": ".mp3, .wav, .ogg, .m4a podľa podpory prehliadača. Súbor ostáva lokálne.",
+  "play": "▶ Play",
+  "playing": "▶ Hrá",
+  "pause": "⏸ Pauza",
+  "stop": "■ Stop",
+  "bypass": "Vypnúť efekty",
+  "loop": "Slučka",
+  "pitch": "Pitch sa mení s rýchlosťou",
+  "onText": "zap.",
+  "waiting": "Čakám na súbor…",
+  "loading": "Načítavam metadata: ",
+  "loaded": "Načítané:",
+  "loadErr": "Prehliadač nevie prehrať tento súbor alebo k nemu stratil prístup.",
+  "playingStatus": "Prehrávam cez WebAudio FX graf.",
+  "playErr": "Nepodarilo sa spustiť WebAudio. Skús znovu ťuknúť Play po výbere súboru.",
+  "fxActive": "zapnuté",
+  "fxBypassed": "vypnuté",
+  "readRate": "Prehrávacia rýchlosť",
+  "readPitch": "Pitch základ",
+  "readWF": "Pribl. W&F spolu",
+  "readFX": "FX stav",
+  "readEngine": "Engine",
+  "engine": "stream + WebAudio",
+  "note": "<strong>Poznámka:</strong> Na mobile je wow/flutter stále modulácia <code>playbackRate</code> po snímkach, nie sample-accurate DSP. Ostatné efekty bežia ako Web Audio graf nad streamovaným audio elementom, takže sú použiteľné aj na dlhé MP3. Na výstupe je bezpečnostný limiter; ak chceš zámerne rozbitý zvuk, použi <strong>Lacný prenosný shitbox</strong>, <strong>Chorý transport</strong> alebo výrazne zvýš Record Level.",
+  "labels": {
+   "labTransport": "Transport: rýchlosť / wow / flutter",
+   "labTone": "Tón / zúžené pásmo / basový hrb",
+   "labHiss": "Šum pásky",
+   "labSat": "Nahrávacia úroveň / mäkká saturácia",
+   "labAzimuth": "Azimut / nastavenie hlavy",
+   "labCrosstalk": "Stereo presluch / užší obraz",
+   "labDropouts": "Dropouty / pokrčenia pásky",
+   "labHum": "50 Hz brum / motor / zdroj",
+   "labNR": "Dolby/NR nesúlad zvuku"
+  },
+  "desc": {
+   "descTransport": "Prvé číslo je stála chyba rýchlosti; ďalšie sú približné WRMS-like percentá. Pri chorom transporte môžeš ísť ďaleko za tabuľkové specs.",
+   "descTone": "Simuluje zúžený frekvenčný rozsah, basový hrb od hlavy a lacnejšiu elektroniku.",
+   "descHiss": "Šum je generovaný v reálnom čase a miešaný za audio cestou. Vyšší tón = ostrejší hiss.",
+   "descSat": "Skôr mäkká kompresia a zjemnenie špičiek než digitálne chrčanie. Normálna kazeta tu potrebuje len trošku, nie kladivo.",
+   "descAzimuth": "Delay jedného kanála + strata výšok. V mono by to znelo ešte horšie; v stereu skôr ako fázový/dull problém.",
+   "descCrosstalk": "Mieša ľavý/pravý kanál do seba. Lacné hlavy a elektronika = menej presný stereo obraz.",
+   "descDropouts": "Krátke prepadnutia signálu: špina, poškodený pás, tlaková podložka alebo pokrčená páska.",
+   "descHum": "50 Hz + harmonické. Lacné napájanie, brum, zle tienený vstup alebo rádio-kazeťák.",
+   "descNR": "Zjednodušený tonal model, nie skutočný Dolby compander."
+  },
+  "nr": {
+   "none": "nič",
+   "bright": "Dolby B kazeta bez Dolby: jasnejšie/šumivejšie",
+   "dull": "Dolby zapnuté na nedolby: zahuhlané",
+   "worn": "starý zle kalibrovaný deck: výšky preč"
+  }
+ },
+ "en": {
+  "title": "Cassette Sound Lab — mobile cassette lab",
+  "intro": "Local cassette playback simulator. Audio streams through the browser media engine, so long MP3 files do not need a huge full decode into RAM. Web Audio then adds optional cassette artifacts: transport wobble, tape hiss, soft saturation, bandwidth limits, head bump, azimuth error, crosstalk, dropouts, and 50 Hz mains hum.",
+  "langLabel": "Language",
+  "file": "1. File and transport",
+  "presetsTitle": "2. Presets",
+  "presetItems": {
+   "clean": [
+    "Clean hi-fi deck",
+    "subtle transport, low noise, nearly full bandwidth"
+   ],
+   "normalTypeI": [
+    "Normal Type I 90s",
+    "ferric, light hiss, softer highs"
+   ],
+   "prerecorded": [
+    "Prerecorded pop cassette",
+    "brighter/Dolby-ish, slight azimuth/crosstalk"
+   ],
+   "walkman": [
+    "Good Walkman",
+    "audible transport + narrower bandwidth"
+   ],
+   "boombox": [
+    "Boombox / low-end deck",
+    "hiss, bandlimit, crosstalk, dropouts"
+   ],
+   "poorPortable": [
+    "Budget portable shitbox",
+    "bad mechanism + cheap audio chain"
+   ],
+   "sickTransport": [
+    "Dying transport",
+    "not a spec sheet, more like belts giving up"
+   ],
+   "dictaphone": [
+    "Dictaphone / radio recording",
+    "narrow bandwidth, hum, mono-ish grime"
+   ],
+   "reset": [
+    "Reset / almost digital",
+    "everything off except playback"
+   ]
+  },
+  "effects": "3. Individual effects",
+  "dropTitle": "Click or drop audio here",
+  "dropSmall": ".mp3, .wav, .ogg, .m4a depending on browser support. The file stays local.",
+  "play": "▶ Play",
+  "playing": "▶ Playing",
+  "pause": "⏸ Pause",
+  "stop": "■ Stop",
+  "bypass": "Vypnúť efekty",
+  "loop": "Slučka",
+  "pitch": "Pitch changes with speed",
+  "onText": "on",
+  "waiting": "Waiting for a file…",
+  "loading": "Loading metadata: ",
+  "loaded": "Loaded:",
+  "loadErr": "The browser cannot play this file or lost access to it.",
+  "playingStatus": "Playing through the Web Audio FX graph.",
+  "playErr": "Could not start WebAudio. Try tapping Play again after choosing a file.",
+  "fxActive": "active",
+  "fxBypassed": "bypassed",
+  "readRate": "Playback rate",
+  "readPitch": "Base pitch",
+  "readWF": "Approx. W&F total",
+  "readFX": "FX state",
+  "readEngine": "Engine",
+  "engine": "stream + WebAudio",
+  "note": "<strong>Note:</strong> On mobile, wow/flutter is still frame-rate <code>playbackRate</code> modulation, not sample-accurate DSP. The other effects run as a Web Audio graph over the streamed audio element, so they remain usable for long MP3 files. A safety limiter is on the output; for intentionally broken sound, use <strong>Budget portable shitbox</strong>, <strong>Dying transport</strong>, or push Record Level hard.",
+  "labels": {
+   "labTransport": "Transport: speed / wow / flutter",
+   "labTone": "Tone / bandlimit / head bump",
+   "labHiss": "Tape hiss",
+   "labSat": "Record level / soft saturation",
+   "labAzimuth": "Azimuth / head alignment",
+   "labCrosstalk": "Stereo presluch / užší obraz",
+   "labDropouts": "Dropouty / pokrčenia pásky",
+   "labHum": "50 Hz hum / motor / PSU",
+   "labNR": "Dolby/NR mismatch tone"
+  },
+  "desc": {
+   "descTransport": "The first value is constant speed error; the rest are rough WRMS-like percentages. With a sick transport you can go far beyond spec-sheet numbers.",
+   "descTone": "Simulates limited bandwidth, bass “head bump”, and cheaper electronics.",
+   "descHiss": "Noise is generated in real time and mixed after the audio path. Higher tone = sharper hiss.",
+   "descSat": "More like soft compression and rounded peaks than digital crackle. A normal cassette needs only a little bit here, not a hammer.",
+   "descAzimuth": "Delay on one channel plus high-frequency loss. In mono this would sound even worse; in stereo it is more of a phase/dullness problem.",
+   "descCrosstalk": "Blends left and right into each other. Cheap heads/electronics = less precise stereo image.",
+   "descDropouts": "Short signal dips: dirt, damaged tape, pressure pad issues, or crinkled tape.",
+   "descHum": "50 Hz plus harmonics. Cheap power supplies, hum, bad shielding, or a radio-cassette unit.",
+   "descNR": "Simplified tone model, not a real Dolby compander."
+  },
+  "nr": {
+   "none": "none",
+   "bright": "Dolby B tape without Dolby: brighter/hissier",
+   "dull": "Dolby on non-Dolby tape: dull/muddy",
+   "worn": "old miscalibrated deck: highs gone"
+  }
+ }
+};
+let currentLang='sk';
+function T(){return copy[currentLang]||copy.sk}
+function setPair(btn,name,small){btn.childNodes[0].nodeValue=name; const s=btn.querySelector('small'); if(s)s.textContent=small;}
+function localize(){
+ currentLang=$('langSelect')?$('langSelect').value:'sk';
+ const t=T();
+ document.documentElement.lang=currentLang;
+ document.title=t.title;
+ $('appTitle').textContent=t.title;
+ $('intro').textContent=t.intro;
+ if($('langLabel')) $('langLabel').textContent=t.langLabel;
+ $('sectionFile').textContent=t.file; $('sectionPresets').textContent=t.presetsTitle; $('sectionEffects').textContent=t.effects;
+ $('dropTitle').textContent=t.dropTitle; $('dropSmall').textContent=t.dropSmall;
+ $('play').textContent=audio.paused?t.play:t.playing;
+ $('pause').textContent=t.pause; $('stop').textContent=t.stop; $('bypass').textContent=t.bypass;
+ $('loopLabel').textContent=t.loop; $('pitchLabel').textContent=t.pitch;
+ $('readRate').textContent=t.readRate; $('readPitch').textContent=t.readPitch; $('readWF').textContent=t.readWF; $('readFX').textContent=t.readFX; $('readEngine').textContent=t.readEngine; $('engineRead').textContent=t.engine;
+ $('note').innerHTML=t.note;
+ for(const [id,txt] of Object.entries(t.labels)) if($(id)) $(id).textContent=txt;
+ for(const [id,txt] of Object.entries(t.desc)) if($(id)) $(id).textContent=txt;
+ const nr=$('nrMode'); for(const opt of nr.options){if(t.nr[opt.value]) opt.textContent=t.nr[opt.value];}
+ document.querySelectorAll('[data-preset]').forEach(btn=>{const k=btn.dataset.preset, p=t.presetItems[k]; if(p)setPair(btn,p[0],p[1]);});
+ document.querySelectorAll('.switch').forEach(sw=>{const text=Array.from(sw.childNodes).find(n=>n.nodeType===3); if(text) text.nodeValue=' '+t.onText; else sw.appendChild(document.createTextNode(' '+t.onText));});
+ if($('status').textContent.includes('Čakám')||$('status').textContent.includes('Waiting')) setStatus(t.waiting);
+ updateLabels();
+}
+
+function fmt(sec){if(!isFinite(sec)||sec<0)sec=0;const m=Math.floor(sec/60),s=Math.floor(sec%60),ms=Math.floor((sec-Math.floor(sec))*1000);return `${m}:${String(s).padStart(2,'0')}.${String(ms).padStart(3,'0')}`;} function clamp(x,a,b){return Math.min(b,Math.max(a,x));} function db(g){return Math.pow(10,g/20)} function setStatus(t,k=''){$('status').textContent=t;$('status').className='status'+(k?' '+k:'')} function v(id){return Number($(id).value)} function on(id){return $(id).checked && !fxBypass}
+function pitchProps(){const preserve=!$('pitchOff').checked;['preservesPitch','mozPreservesPitch','webkitPreservesPitch'].forEach(p=>{try{if(p in audio)audio[p]=preserve}catch(e){}})}
+function makeCurve(amount){const n=2048,curve=new Float32Array(n); if(amount<=0){for(let i=0;i<n;i++)curve[i]=i/(n-1)*2-1;return curve;} const k=0.15+(amount/100)*3.2; const norm=Math.tanh(1+k); for(let i=0;i<n;i++){const x=i/(n-1)*2-1; curve[i]=Math.tanh(x*(1+k))/norm;} return curve;}
+function noiseBuffer(){const len=2*48000,buf=ctx.createBuffer(1,len,48000),d=buf.getChannelData(0);let pink=0;for(let i=0;i<len;i++){const white=Math.random()*2-1;pink=.98*pink+.02*white;d[i]=white*.65+pink*.35;}return buf;}
+async function ensureGraph(){if(graphReady)return; const AC=window.AudioContext||window.webkitAudioContext; if(!AC)throw new Error('No WebAudio'); ctx=new AC(); source=ctx.createMediaElementSource(audio); const n=nodes; n.pre=ctx.createGain(); n.shaper=ctx.createWaveShaper(); n.hp=ctx.createBiquadFilter();n.hp.type='highpass'; n.bump=ctx.createBiquadFilter();n.bump.type='lowshelf'; n.lp=ctx.createBiquadFilter();n.lp.type='lowpass'; n.nr=ctx.createBiquadFilter();n.nr.type='highshelf';n.nr.frequency.value=3800; n.split=ctx.createChannelSplitter(2); n.lAz=ctx.createBiquadFilter();n.lAz.type='highshelf';n.lAz.frequency.value=4800; n.rDelay=ctx.createDelay(.05); n.rAz=ctx.createBiquadFilter();n.rAz.type='highshelf';n.rAz.frequency.value=4800; n.lDry=ctx.createGain();n.rDry=ctx.createGain();n.lCross=ctx.createGain();n.rCross=ctx.createGain(); n.merge=ctx.createChannelMerger(2); n.dropout=ctx.createGain(); n.master=ctx.createGain(); n.limiter=ctx.createDynamicsCompressor(); n.limiter.threshold.value=-6; n.limiter.knee.value=3; n.limiter.ratio.value=18; n.limiter.attack.value=0.003; n.limiter.release.value=0.12;
+ source.connect(n.pre);n.pre.connect(n.shaper);n.shaper.connect(n.hp);n.hp.connect(n.bump);n.bump.connect(n.lp);n.lp.connect(n.nr);n.nr.connect(n.split); n.split.connect(n.lAz,0); n.split.connect(n.rDelay,1); n.rDelay.connect(n.rAz); n.lAz.connect(n.lDry);n.lDry.connect(n.merge,0,0); n.rAz.connect(n.rDry);n.rDry.connect(n.merge,0,1); n.rAz.connect(n.rCross);n.rCross.connect(n.merge,0,0); n.lAz.connect(n.lCross);n.lCross.connect(n.merge,0,1); n.merge.connect(n.dropout);n.dropout.connect(n.master);n.master.connect(n.limiter);n.limiter.connect(ctx.destination);
+ n.noiseSrc=ctx.createBufferSource();n.noiseSrc.buffer=noiseBuffer();n.noiseSrc.loop=true; n.noiseHP=ctx.createBiquadFilter();n.noiseHP.type='highpass';n.noiseLP=ctx.createBiquadFilter();n.noiseLP.type='lowpass';n.noiseGain=ctx.createGain();n.noiseSrc.connect(n.noiseHP);n.noiseHP.connect(n.noiseLP);n.noiseLP.connect(n.noiseGain);n.noiseGain.connect(n.master);n.noiseSrc.start();
+ n.hum1=ctx.createOscillator();n.hum1.frequency.value=50;n.hum2=ctx.createOscillator();n.hum2.frequency.value=100;n.hum3=ctx.createOscillator();n.hum3.frequency.value=150;n.humG1=ctx.createGain();n.humG2=ctx.createGain();n.humG3=ctx.createGain();n.humMix=ctx.createGain(); n.hum1.connect(n.humG1);n.hum2.connect(n.humG2);n.hum3.connect(n.humG3);n.humG1.connect(n.humMix);n.humG2.connect(n.humMix);n.humG3.connect(n.humMix);n.humMix.connect(n.master);n.hum1.start();n.hum2.start();n.hum3.start(); graphReady=true; updateGraph();}
+function updateLabels(){const labels={speedPct:'speedPctVal',wowPct:'wowPctVal',wowHz:'wowHzVal',flutterPct:'flutterPctVal',flutterHz:'flutterHzVal',driftPct:'driftPctVal',lowpass:'lowpassVal',highpass:'highpassVal',headBump:'headBumpVal',hiss:'hissVal',hissTone:'hissToneVal',drive:'driveVal',output:'outputVal',azimuthMs:'azimuthMsVal',azimuthLoss:'azimuthLossVal',crosstalk:'crosstalkVal',dropoutDepth:'dropoutDepthVal',dropoutRate:'dropoutRateVal',hum:'humVal'}; for(const id of paramIds){const el=$(labels[id]); if(!el)continue; let txt=v(id).toString(); if(id.includes('Pct')||id==='hiss'||id==='drive'||id==='crosstalk'||id==='dropoutDepth'||id==='hum')txt=v(id).toFixed(id.includes('Pct')?3:0)+' %'; else if(id.includes('Hz')||id==='lowpass'||id==='highpass'||id==='hissTone'||id==='dropoutRate')txt=v(id).toFixed(id==='dropoutRate'?1:0)+' Hz'; else if(id==='headBump'||id==='azimuthLoss')txt=v(id).toFixed(1)+' dB'; else if(id==='azimuthMs')txt=v(id).toFixed(2)+' ms'; else if(id==='output')txt=Math.round(v(id)*100)+' %'; el.textContent=txt;}
+ const base=1+v('speedPct')/100,cents=1200*Math.log2(Math.max(.001,base)),wf=Math.sqrt(v('wowPct')**2+v('flutterPct')**2+v('driftPct')**2); $('centsRead').textContent=(cents>=0?'+':'')+cents.toFixed(1)+' cents'; $('wfRead').textContent=wf.toFixed(wf<.1?3:2)+' %'; $('fxRead').textContent=fxBypass?T().fxBypassed:T().fxActive;}
+function updateGraph(){updateLabels(); if(!graphReady)return; const n=nodes, now=ctx.currentTime; n.master.gain.setTargetAtTime(v('output'),now,.02); n.pre.gain.setTargetAtTime(on('satOn')?0.96:1,now,.02); n.shaper.curve=makeCurve(on('satOn')?v('drive'):0); n.shaper.oversample='2x'; n.hp.frequency.setTargetAtTime(on('toneOn')?v('highpass'):15,now,.03); n.bump.frequency.setTargetAtTime(90,now,.03); n.bump.gain.setTargetAtTime(on('toneOn')?v('headBump'):0,now,.03); n.lp.frequency.setTargetAtTime(on('toneOn')?v('lowpass'):20000,now,.03); const nrOn=on('nrOn'),mode=$('nrMode').value; let nrGain=0;if(nrOn&&mode==='bright')nrGain=5.5;if(nrOn&&mode==='dull')nrGain=-7;if(nrOn&&mode==='worn')nrGain=-10; n.nr.gain.setTargetAtTime(nrGain,now,.03); const az=on('azimuthOn'); n.rDelay.delayTime.setTargetAtTime(az?v('azimuthMs')/1000:0,now,.02); n.rAz.gain.setTargetAtTime(az?-v('azimuthLoss'):0,now,.03); n.lAz.gain.setTargetAtTime(0,now,.03); const c=on('crosstalkOn')?v('crosstalk')/100:0; n.lDry.gain.setTargetAtTime(1-c,now,.02);n.rDry.gain.setTargetAtTime(1-c,now,.02);n.lCross.gain.setTargetAtTime(c,now,.02);n.rCross.gain.setTargetAtTime(c,now,.02); n.noiseHP.frequency.setTargetAtTime(v('hissTone'),now,.03); n.noiseLP.frequency.setTargetAtTime(15000,now,.03); n.noiseGain.gain.setTargetAtTime(on('hissOn')?Math.pow(v('hiss')/100,2)*.032:0,now,.03); const hg=on('humOn')?Math.pow(v('hum')/100,2)*.055:0; n.humG1.gain.setTargetAtTime(hg,now,.02);n.humG2.gain.setTargetAtTime(hg*.45,now,.02);n.humG3.gain.setTargetAtTime(hg*.22,now,.02);}
+function rateMod(now){if(!on('transportOn'))return 1; const t=now-t0,base=1+v('speedPct')/100; if(now-lastDrift>1/Math.max(.01,v('driftPct')*.08+.02)){driftTarget=Math.random()*2-1;lastDrift=now;} const driftCoeff=.025;drift+=(driftTarget-drift)*driftCoeff; smoothNoise+=((Math.random()*2-1)-smoothNoise)*.16; const wow=(v('wowPct')/100)*Math.SQRT2*(.82*Math.sin(2*Math.PI*v('wowHz')*t)+.18*Math.sin(2*Math.PI*v('wowHz')*2.07*t+1.1)); const fl=(v('flutterPct')/100)*Math.SQRT2*(.78*Math.sin(2*Math.PI*v('flutterHz')*t)+.14*Math.sin(2*Math.PI*v('flutterHz')*1.618*t+2.7)+.08*smoothNoise); const dr=(v('driftPct')/100)*drift; return clamp(base*(1+wow+fl+dr),.25,4);}
+function animate(){const now=performance.now()/1000; pitchProps(); if(!audio.paused){const r=fxBypass?1:rateMod(now); try{audio.playbackRate=r}catch(e){} $('rateRead').textContent=r.toFixed(4)+'×';}
+ if(graphReady){let g=1;if(on('dropoutOn')&&!fxBypass){const rate=v('dropoutRate'),depthMax=v('dropoutDepth')/100;if(rate>0&&now>nextDrop){dropActive=true;dropStart=now;dropEnd=now+(0.035+Math.random()*0.22);dropDepth=depthMax*(.25+Math.random()*.75);nextDrop=now+Math.max(.05,-Math.log(Math.random())/rate);} if(dropActive){if(now>dropEnd){dropActive=false;g=1}else{const x=(now-dropStart)/(dropEnd-dropStart);const env=Math.sin(Math.PI*x);g=1-dropDepth*env;}}} nodes.dropout.gain.setTargetAtTime(g,ctx.currentTime,.012);} if(!dragProgress&&isFinite(audio.duration)&&audio.duration>0){$('progress').value=Math.round(audio.currentTime/audio.duration*1000);$('now').textContent=fmt(audio.currentTime);$('end').textContent=fmt(audio.duration);} requestAnimationFrame(animate);}
+function applyPreset(name){const pr=presets[name]||presets.reset; for(const [k,val] of Object.entries(pr.p)){if($(k))$(k).value=val;} for(const [k,val] of Object.entries(pr.tog)){if($(k))$(k).checked=val;} $('nrMode').value=pr.nr||'none'; fxBypass=false; updateGraph();}
+async function loadFile(file){if(!file)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(file);audio.src=url;audio.load();$('play').disabled=$('pause').disabled=$('stop').disabled=$('progress').disabled=false;setStatus(T().loading+file.name+'…');}
+audio.addEventListener('loadedmetadata',()=>{setStatus(`${T().loaded} ${fmt(audio.duration)} · stream + WebAudio FX`, 'ok');$('end').textContent=fmt(audio.duration);}); audio.addEventListener('error',()=>setStatus(T().loadErr,'err'));
+$('fileInput').addEventListener('change',()=>loadFile($('fileInput').files[0])); const drop=$('drop'); ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')})); ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')})); drop.addEventListener('drop',e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadFile(f)});
+$('play').addEventListener('click',async()=>{try{await ensureGraph();await ctx.resume();pitchProps();await audio.play();$('play').textContent=T().playing;setStatus(T().playingStatus,'ok')}catch(e){console.error(e);setStatus(T().playErr,'err')}}); $('pause').addEventListener('click',()=>{audio.pause();$('play').textContent=T().play}); $('stop').addEventListener('click',()=>{audio.pause();audio.currentTime=0;$('play').textContent=T().play}); $('loop').addEventListener('change',()=>audio.loop=$('loop').checked); $('bypass').addEventListener('click',()=>{fxBypass=!fxBypass;updateGraph()}); $('progress').addEventListener('pointerdown',()=>dragProgress=true);$('progress').addEventListener('pointerup',()=>dragProgress=false);$('progress').addEventListener('input',()=>{if(isFinite(audio.duration)){audio.currentTime=Number($('progress').value)/1000*audio.duration;$('now').textContent=fmt(audio.currentTime)}});
+for(const id of paramIds){$(id).addEventListener('input',updateGraph)} document.querySelectorAll('[data-toggle]').forEach(el=>el.addEventListener('change',updateGraph)); $('nrMode').addEventListener('change',updateGraph); document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset))); $('langSelect').addEventListener('change',localize); localize(); applyPreset('normalTypeI'); requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
